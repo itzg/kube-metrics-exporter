@@ -59,7 +59,9 @@ func main() {
 	http.Handle(config.MetricsPath, promhttp.Handler())
 
 	logger.Info("ready to export metrics", zap.String("binding", config.HttpBinding),
-		zap.String("path", config.MetricsPath))
+		zap.String("path", config.MetricsPath),
+		zap.String("namespace", config.Namespace),
+	)
 	err = http.ListenAndServe(config.HttpBinding, nil)
 	logger.Fatal("http server failed", zap.Error(err))
 }

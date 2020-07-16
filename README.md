@@ -1,10 +1,29 @@
-Simple application that accesses the [Kubernetes metrics API](https://github.com/kubernetes/metrics) and exports them for Prometheus scraping.
+Simple application that accesses the [Kubernetes metrics API](https://github.com/kubernetes/metrics) and exports the pod metrics for Prometheus scraping.
 
 The Metrics API is exposed by a deployed [Metrics Server](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-metrics-pipeline/#metrics-server) which is included in most managed clusters. [It can also be deployed separately.](https://github.com/kubernetes-sigs/metrics-server).
 
-## Stand-alone Usage
+## Metrics
 
-The `kube-metrics-exporter` executable can be executed outside of Kubernetes cluster, in which case it will locate and use the kubernetes configuration from the standard location(s).
+This services exports two metrics:
+- `container_cpu_usage`
+- `container_mem_usage`
+
+Both metrics include the labels:
+- `namespace`
+- `pod`
+- `container`
+
+### Example
+```
+# HELP container_cpu_usage millicores of CPU used
+# TYPE container_cpu_usage gauge
+container_cpu_usage{container="grafana",namespace="default",pod="grafana-0"} 2
+# HELP container_mem_usage mebibytes of memory used
+# TYPE container_mem_usage gauge
+container_mem_usage{container="grafana",namespace="default",pod="grafana-0"} 25
+```
+
+## Command-line
 
 ```
   -debug
@@ -18,9 +37,13 @@ The `kube-metrics-exporter` executable can be executed outside of Kubernetes clu
         the namespace of the pods to collect (env NAMESPACE) (default "default")
 ```
 
+## Stand-alone Usage
+
+The `kube-metrics-exporter` executable can be executed outside of Kubernetes cluster, in which case it will locate and use the kubernetes configuration from the standard location(s).
+
 ## In-cluster Usage
 
-With a service account defined with the correct roles, [as described below](#service-account), the reporter can be deployed with a pod manifest such as the following:
+With a service account defined with the correct roles, [as described below](#service-account), the reporter can be deployed with a pod manifest such as the following to export metrics for pods in the same namespace:
 
 ```yaml
     metadata:

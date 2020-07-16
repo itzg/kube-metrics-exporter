@@ -30,8 +30,8 @@ const (
 
 var (
 	CommonLabels = []string{LabelNamespace, LabelPod, LabelContainer}
-	DescCpuUsage = prometheus.NewDesc("pod_cpu_usage", "millicores of CPU used", CommonLabels, nil)
-	DescMemUsage = prometheus.NewDesc("pod_mem_usage", "mebibytes of memory used", CommonLabels, nil)
+	DescCpuUsage = prometheus.NewDesc("container_cpu_usage", "millicores of CPU used", CommonLabels, nil)
+	DescMemUsage = prometheus.NewDesc("container_mem_usage", "mebibytes of memory used", CommonLabels, nil)
 )
 
 func (c *KubeMetricsCollector) Describe(descs chan<- *prometheus.Desc) {
