@@ -1,3 +1,7 @@
+[![goreleaser](https://github.com/itzg/kube-metrics-exporter/workflows/goreleaser/badge.svg)](https://github.com/itzg/kube-metrics-exporter/actions?query=workflow%3Agoreleaser)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/itzg/kube-metrics-exporter)](https://github.com/itzg/kube-metrics-exporter/releases/latest)
+[![Docker Pulls](https://img.shields.io/docker/pulls/itzg/kube-metrics-exporter)](https://hub.docker.com/r/itzg/kube-metrics-exporter)
+
 Simple application that accesses the [Kubernetes metrics API](https://github.com/kubernetes/metrics) and exports the pod metrics for Prometheus scraping.
 
 The Metrics API is exposed by a deployed [Metrics Server](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-metrics-pipeline/#metrics-server) which is included in most managed clusters. [It can also be deployed separately.](https://github.com/kubernetes-sigs/metrics-server).
@@ -12,6 +16,14 @@ Both metrics include the labels:
 - `namespace`
 - `pod`
 - `container`
+
+### Prometheus label renaming
+
+By default, Prometheus will rename the labels above to avoid conflicts with the same labels applied during export. As a result, the metric in Prometheus will appear as:
+
+```
+container_cpu_usage{container="kube-metrics-exporter",endpoint="http",exported_container="grafana",exported_namespace="default",exported_pod="grafana-0",instance="10.40.1.109:8080",job="thanos-poc/monitor-metrics-http",namespace="default",pod="kube-metrics-exporter-6d9b8f978d-84x6q"}
+```
 
 ### Example
 ```
