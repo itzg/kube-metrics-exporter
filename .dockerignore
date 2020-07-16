@@ -1,0 +1,9 @@
+.idea
+*.iml
+.circleci
+k8s
+Dockerfile*
+skaffold.yml
+README.md
+LICENSE.txt
+.goreleaser.yml

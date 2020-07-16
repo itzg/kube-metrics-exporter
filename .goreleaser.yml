@@ -1,0 +1,42 @@
+project_name: kube-metrics-exporter
+before:
+  hooks:
+    - go mod download
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+    - linux
+    - windows
+    - darwin
+  goarch:
+    - amd64
+    - arm
+    - arm64
+  goarm:
+    - 6
+    - 7
+archives:
+- replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+dockers:
+  - image_templates:
+      - itzg/kube-metrics-exporter:latest
+      - itzg/kube-metrics-exporter:{{ .Tag }}
+    dockerfile: Dockerfile.release
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - '^ci:'
+    - '^misc:'
