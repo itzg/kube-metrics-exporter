@@ -9,8 +9,8 @@ The Metrics API is exposed by a deployed [Metrics Server](https://kubernetes.io/
 ## Metrics
 
 This services exports two metrics:
-- `container_cpu_usage`
-- `container_mem_usage`
+- `container_cpu_usage_cores`
+- `container_mem_usage_bytes`
 
 Both metrics include the labels:
 - `namespace`
@@ -22,17 +22,17 @@ Both metrics include the labels:
 By default, Prometheus will rename the labels above to avoid conflicts with the same labels applied during export. As a result, the metric in Prometheus will appear as:
 
 ```
-container_cpu_usage{container="kube-metrics-exporter",endpoint="http",exported_container="grafana",exported_namespace="default",exported_pod="grafana-0",instance="10.40.1.109:8080",job="thanos-poc/monitor-metrics-http",namespace="default",pod="kube-metrics-exporter-6d9b8f978d-84x6q"}
+container_cpu_usage_cores{container="kube-metrics-exporter",endpoint="http",exported_container="grafana",exported_namespace="default",exported_pod="grafana-0",instance="10.40.1.109:8080",job="thanos-poc/monitor-metrics-http",namespace="default",pod="kube-metrics-exporter-6d9b8f978d-84x6q"}
 ```
 
 ### Example
 ```
-# HELP container_cpu_usage millicores of CPU used
-# TYPE container_cpu_usage gauge
-container_cpu_usage{container="grafana",namespace="default",pod="grafana-0"} 2
-# HELP container_mem_usage mebibytes of memory used
-# TYPE container_mem_usage gauge
-container_mem_usage{container="grafana",namespace="default",pod="grafana-0"} 25
+# HELP container_cpu_usage_cores CPU cores used
+# TYPE container_cpu_usage_cores gauge
+container_cpu_usage_cores{container="grafana",namespace="default",pod="grafana-0"} 0.003
+# HELP container_memory_usage_bytes memory used
+# TYPE container_memory_usage_bytes gauge
+container_memory_usage_bytes{container="grafana",namespace="default",pod="grafana-0"} 6.0362752e+08
 ```
 
 ## Command-line
