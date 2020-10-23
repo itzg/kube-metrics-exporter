@@ -30,8 +30,8 @@ const (
 
 var (
 	CommonLabels = []string{LabelNamespace, LabelPod, LabelContainer}
-	DescCpuUsage = prometheus.NewDesc("container_cpu_usage", "millicores of CPU used", CommonLabels, nil)
-	DescMemUsage = prometheus.NewDesc("container_mem_usage", "mebibytes of memory used", CommonLabels, nil)
+	DescCpuUsage = prometheus.NewDesc("container_cpu_usage_cores", "CPU cores used", CommonLabels, nil)
+	DescMemUsage = prometheus.NewDesc("container_memory_usage_bytes", "memory used", CommonLabels, nil)
 )
 
 func (c *KubeMetricsCollector) Describe(descs chan<- *prometheus.Desc) {
@@ -52,9 +52,9 @@ func (c *KubeMetricsCollector) Collect(metrics chan<- prometheus.Metric) {
 			containerName := container.Name
 			// matching the units reported by kubectl top pods
 			cpuUsage := container.Usage.Cpu().ScaledValue(resource.Milli)
-			memUsage := container.Usage.Memory().ScaledValue(resource.Mega)
+			memUsage := container.Usage.Memory().Value()
 
-			metric, err := prometheus.NewConstMetric(DescCpuUsage, prometheus.GaugeValue, float64(cpuUsage),
+			metric, err := prometheus.NewConstMetric(DescCpuUsage, prometheus.GaugeValue, float64(cpuUsage)/1000,
 				c.namespace, podName, containerName)
 			if err != nil {
 				c.logger.Warn("failed to create metric", zap.Error(err))
