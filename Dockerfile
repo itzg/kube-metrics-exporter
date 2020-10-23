@@ -1,5 +1,5 @@
 # Setup a multi-stage build
-FROM golang:1.13 as builder
+FROM golang:1.15.3 as builder
 
 # Using go modules, so purposely avoid building within /go directory
 WORKDIR /build
@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 go build -gcflags "all=-N -l"
 # Runtime stage
 # skaffold Go debugging doesn't seem to work with alpine or scratch
 FROM ubuntu
-COPY --from=builder /build/kube-metrics-reporter /usr/bin
+COPY --from=builder /build/kube-metrics-exporter /usr/bin
 # identify as Go for skaffold debug, see https://skaffold.dev/docs/workflows/debug/#go
 ENV GOTRACEBACK=all
-ENTRYPOINT ["/usr/bin/kube-metrics-reporter"]
+ENTRYPOINT ["/usr/bin/kube-metrics-exporter"]
