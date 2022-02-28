@@ -41,8 +41,9 @@ container_memory_usage_bytes{container="grafana",namespace="default",pod="grafan
   -debug
         enable debug logging (env DEBUG)
   -http-binding string
-        binding of http listener for metrics export (env HTTP_BINDING) (default
-":8080")
+        binding of http listener for metrics export (env HTTP_BINDING) (default ":8080")
+  -ignore-namespaces value
+    	when 'namespace' is empty, this lists namespaces to ignore (env IGNORE_NAMESPACES) (default kube-system)
   -metrics-path string
         http path for metrics export (env METRICS_PATH) (default "/metrics")
   -namespace string
@@ -76,7 +77,7 @@ With a service account defined with the correct roles, [as described below](#ser
 
 ## Service account
 
-Since this application accesses the metrics API of the kubernetes API service, the pod will need to be assigned a service account with an appropriate role. 
+Since this application accesses the metrics API of the kubernetes API service, the pod will need to be assigned a service account with an appropriate role.
 
 > Service accounts must be present before the deployment, so either ensure the service account manifest is applied first or place the service account yaml documents before the deployment in the same manifest file.
 
