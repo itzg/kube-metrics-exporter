@@ -61,7 +61,7 @@ func main() {
 		logger.Fatal("failed getting namespaces", zap.Error(err))
 	}
 
-	err = handler.SetupCollector(namespaces)
+	err = handler.SetupCollector(&mu)
 	if err != nil {
 		logger.Fatal("could not register collectors", zap.Error(err))
 	}
@@ -70,7 +70,6 @@ func main() {
 		for {
 			logger.Info("checking namespaces...")
 			time.Sleep(time.Second * 20)
-			mu.Lock()
 			namespaces, err = handler.GetNamespaces()
 			if err != nil {
 				logger.Error("failed getting namespaces", zap.Error(err))
@@ -78,7 +77,6 @@ func main() {
 
 			logger.Info("Updating collector with new namespaces...")
 			handler.UpdateNamespaces(namespaces)
-			mu.Unlock()
 		}
 	}()
 

@@ -1,6 +1,8 @@
 package pkg
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -11,14 +13,15 @@ import (
 type KubeMetricsCollector struct {
 	logger     *zap.Logger
 	clientset  *versioned.Clientset
+	mu         *sync.RWMutex
 	namespaces []string
 }
 
-func NewKubeMetricsCollector(logger *zap.Logger, clientset *versioned.Clientset, namespaces []string) *KubeMetricsCollector {
+func NewKubeMetricsCollector(logger *zap.Logger, clientset *versioned.Clientset, mu *sync.RWMutex) *KubeMetricsCollector {
 	return &KubeMetricsCollector{
-		logger:     logger,
-		clientset:  clientset,
-		namespaces: namespaces,
+		logger:    logger,
+		clientset: clientset,
+		mu:        mu,
 	}
 }
 
@@ -40,11 +43,17 @@ func (c *KubeMetricsCollector) Describe(descs chan<- *prometheus.Desc) {
 }
 
 func (c *KubeMetricsCollector) UpdateNamespaces(namespaces []string) {
+	c.mu.Lock()
 	c.namespaces = namespaces
+	c.mu.Unlock()
 }
 
 func (c *KubeMetricsCollector) Collect(metrics chan<- prometheus.Metric) {
-	for _, namespace := range c.namespaces {
+	c.mu.RLock()
+	namespaces := c.namespaces
+	c.mu.RUnlock()
+
+	for _, namespace := range namespaces {
 		podMetricsAccessor := c.clientset.MetricsV1beta1().PodMetricses(namespace)
 
 		podMetricsList, err := podMetricsAccessor.List(v1.ListOptions{})

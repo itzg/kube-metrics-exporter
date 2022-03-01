@@ -1,6 +1,8 @@
 package pkg
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	rest "k8s.io/client-go/rest"
@@ -24,8 +26,8 @@ type Handler struct {
 	collector      *KubeMetricsCollector
 }
 
-func (h *Handler) SetupCollector(namespaces []string) (err error) {
-	h.collector = NewKubeMetricsCollector(h.Logger.Named("collector"), h.ClientSet, namespaces)
+func (h *Handler) SetupCollector(mu *sync.RWMutex) (err error) {
+	h.collector = NewKubeMetricsCollector(h.Logger.Named("collector"), h.ClientSet, mu)
 	err = prometheus.Register(h.collector)
 	if err != nil {
 		return
