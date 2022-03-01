@@ -73,7 +73,7 @@ func main() {
 			mu.Lock()
 			namespaces, err = handler.GetNamespaces()
 			if err != nil {
-				logger.Fatal("failed getting namespaces", zap.Error(err))
+				logger.Error("failed getting namespaces", zap.Error(err))
 			}
 
 			logger.Info("Updating collector with new namespaces...")
