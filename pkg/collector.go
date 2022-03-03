@@ -1,24 +1,27 @@
 package pkg
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
+	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type KubeMetricsCollector struct {
-	podMetricsAccessor v1beta1.PodMetricsInterface
-	logger             *zap.Logger
-	namespace          string
+	logger     *zap.Logger
+	clientset  *versioned.Clientset
+	mu         *sync.RWMutex
+	namespaces []string
 }
 
-func NewKubeMetricsCollector(podMetricsAccessor v1beta1.PodMetricsInterface, logger *zap.Logger, namespace string) *KubeMetricsCollector {
+func NewKubeMetricsCollector(logger *zap.Logger, clientset *versioned.Clientset, mu *sync.RWMutex) *KubeMetricsCollector {
 	return &KubeMetricsCollector{
-		podMetricsAccessor: podMetricsAccessor,
-		logger:             logger,
-		namespace:          namespace,
+		logger:    logger,
+		clientset: clientset,
+		mu:        mu,
 	}
 }
 
@@ -39,37 +42,65 @@ func (c *KubeMetricsCollector) Describe(descs chan<- *prometheus.Desc) {
 	descs <- DescMemUsage
 }
 
+func (c *KubeMetricsCollector) UpdateNamespaces(namespaces []string) {
+	c.mu.Lock()
+	c.namespaces = namespaces
+	c.mu.Unlock()
+}
+
 func (c *KubeMetricsCollector) Collect(metrics chan<- prometheus.Metric) {
-	podMetricsList, err := c.podMetricsAccessor.List(v1.ListOptions{})
-	if err != nil {
-		c.logger.Error("failed to list kube metrics", zap.Error(err))
-		return
-	}
+	c.mu.RLock()
+	namespaces := c.namespaces
+	c.mu.RUnlock()
 
-	for _, p := range podMetricsList.Items {
-		podName := p.Name
-		for _, container := range p.Containers {
-			containerName := container.Name
-			// matching the units reported by kubectl top pods
-			cpuUsage := container.Usage.Cpu().ScaledValue(resource.Milli)
-			memUsage := container.Usage.Memory().Value()
+	for _, namespace := range namespaces {
+		podMetricsAccessor := c.clientset.MetricsV1beta1().PodMetricses(namespace)
 
-			metric, err := prometheus.NewConstMetric(DescCpuUsage, prometheus.GaugeValue, float64(cpuUsage)/1000,
-				c.namespace, podName, containerName)
-			if err != nil {
-				c.logger.Warn("failed to create metric", zap.Error(err))
-			} else {
-				metrics <- metric
-			}
+		podMetricsList, err := podMetricsAccessor.List(v1.ListOptions{})
+		if err != nil {
+			c.logger.Warn(
+				"failed to list kube-metrics",
+				zap.String("namespace", namespace),
+				zap.Error(err))
+			continue
+		}
 
-			metric, err = prometheus.NewConstMetric(DescMemUsage, prometheus.GaugeValue, float64(memUsage),
-				c.namespace, podName, containerName)
-			if err != nil {
-				c.logger.Warn("failed to create metric", zap.Error(err))
-			} else {
-				metrics <- metric
+		for _, p := range podMetricsList.Items {
+			podName := p.Name
+			for _, container := range p.Containers {
+				containerName := container.Name
+				// matching the units reported by kubectl top pods
+				cpuUsage := container.Usage.Cpu().ScaledValue(resource.Milli)
+				memUsage := container.Usage.Memory().Value()
+
+				metric, err := prometheus.NewConstMetric(
+					DescCpuUsage,
+					prometheus.GaugeValue,
+					float64(cpuUsage)/1000,
+					// labels
+					namespace,
+					podName,
+					containerName)
+				if err != nil {
+					c.logger.Warn("failed to create metric", zap.Error(err))
+				} else {
+					metrics <- metric
+				}
+
+				metric, err = prometheus.NewConstMetric(
+					DescMemUsage,
+					prometheus.GaugeValue,
+					float64(memUsage),
+					// labels
+					namespace,
+					podName,
+					containerName)
+				if err != nil {
+					c.logger.Warn("failed to create metric", zap.Error(err))
+				} else {
+					metrics <- metric
+				}
 			}
 		}
 	}
-
 }
